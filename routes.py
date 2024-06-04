@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/')
 def index():
-    #user_id in session
+    # Check if user_id is in session
     if 'user_id' in session:
         return render_template('index.html')
     else:
@@ -16,7 +16,7 @@ def index():
 def login():
     return render_template('login.html')
 
-@app.route('/login', methods = ['POST'])
+@app.route('/login', methods=['POST'])
 def login_post():
     username = request.form.get('username')
     password = request.form.get('password')    
@@ -29,13 +29,13 @@ def login_post():
         flash('Username does not exist')
         return redirect(url_for('login'))
     
-    
     if not check_password_hash(user.passhash, password):
         flash('Incorrect password')
         return redirect(url_for('login'))
     
     session['user_id'] = user.userid
-    return redirect(url_for('index'))
+    return redirect(url_for('profile'))
+
 @app.route('/register')
 def register():
     return render_template('register.html')
@@ -47,7 +47,6 @@ def register_post():
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
     
-    #
     if not username or not password or not confirm_password:
         flash('Please fill out all the fields')
         return redirect(url_for('register'))
@@ -62,7 +61,17 @@ def register_post():
         return redirect(url_for('register'))
     
     pass_hash = generate_password_hash(password)
-    new_user = User(username=username, passhash = pass_hash, name = name)
+    new_user = User(username=username, passhash=pass_hash, name=name)
     db.session.add(new_user)
     db.session.commit()
     return redirect(url_for('login'))
+
+@app.route('/profile')
+def profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please login to continue')
+        return redirect(url_for('login'))
+    
+    user = User.query.get(user_id)
+    return render_template('profile.html', user=user)
